@@ -12,13 +12,12 @@ app.get("/health", (req, res) => {
   res.json({ ok: true });
 });
 
-app.post("/pronounce", upload.single("audio"), async (req, res) => {
-  res.json({
-    text: "bitte",
-    accuracy: 1.0,
-    ok: true
-  });
+app.post("/pronounce", upload.single("audio"), (req, res) => {
+  res.json({ ok: true });
 });
 
 const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => console.log("Server running on " + PORT));
+
+app.listen(PORT, () => {
+  console.log("running on " + PORT);
+});
