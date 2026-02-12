@@ -2,12 +2,12 @@ import express from "express";
 import cors from "cors";
 import multer from "multer";
 import OpenAI from "openai";
+import { Readable } from "stream";
 
 const app = express();
 const upload = multer();
 
 app.use(cors());
-app.use(express.json());
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -27,16 +27,18 @@ app.get("/health", (req, res) => {
 app.post("/pronounce", upload.single("audio"), async (req, res) => {
   try {
     if (!req.file) {
-      return res.json({ strictOk: false, error: "No audio file" });
+      return res.json({ strictOk: false, error: "No audio file received" });
     }
 
     const targetText = req.body.targetText || "";
-    const language = req.body.language || "de";
+
+    // 👇 Buffer in Stream umwandeln (wichtig!)
+    const audioStream = Readable.from(req.file.buffer);
 
     const transcription = await openai.audio.transcriptions.create({
-      file: req.file.buffer,
+      file: audioStream,
       model: "whisper-1",
-      language: "de"
+      language: "de",
     });
 
     const recognizedText = transcription.text;
@@ -45,14 +47,14 @@ app.post("/pronounce", upload.single("audio"), async (req, res) => {
 
     res.json({
       recognizedText,
-      strictOk
+      strictOk,
     });
 
   } catch (err) {
     console.error(err);
     res.json({
       strictOk: false,
-      error: String(err)
+      error: String(err),
     });
   }
 });
