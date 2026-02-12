@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import multer from "multer";
 import OpenAI from "openai";
-import { Readable } from "stream";
+import { toFile } from "openai/uploads";
 
 const app = express();
 const upload = multer();
@@ -32,17 +32,16 @@ app.post("/pronounce", upload.single("audio"), async (req, res) => {
 
     const targetText = req.body.targetText || "";
 
-    // 👇 Buffer in Stream umwandeln (wichtig!)
-    const audioStream = Readable.from(req.file.buffer);
+    // 👇 KORREKTES File-Objekt für OpenAI v4
+    const file = await toFile(req.file.buffer, "speech.webm");
 
     const transcription = await openai.audio.transcriptions.create({
-      file: audioStream,
+      file,
       model: "whisper-1",
       language: "de",
     });
 
     const recognizedText = transcription.text;
-
     const strictOk = clean(recognizedText) === clean(targetText);
 
     res.json({
